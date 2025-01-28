@@ -106,7 +106,7 @@ fell free
 ## 💡 Getting Started
 ```bash
 # Clone the repository
-git clone https://github.com/ZoeyX-FD/Rust-Ai-Agent---Deepseek.git
+git clone https://github.com/https://github.com/AiRysZ-Agent/AiRysZ-Agents
 
 # Build the project
 cargo build
