@@ -1,0 +1,77 @@
+[package]
+name = "rust-ai-agent"
+version = "0.1.0"
+edition = "2021"
+default-run = "rust-ai-agent"
+
+[dependencies]
+# Async Runtime and Core
+tokio = { version = "1.0", features = ["full"] }
+futures = "0.3"
+async-trait = "0.1"
+
+# HTTP and API Client
+reqwest = { version = "0.11", features = ["json"] }
+async-openai = "0.18.0"
+
+# Serialization and Data Handling
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+validator = { version = "0.16", features = ["derive"] }
+
+# Error Handling
+anyhow = "1.0"
+thiserror = "1.0"
+log = "0.4"
+env_logger = "0.10"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# Database and Storage
+qdrant-client = "1.7"
+tokio-rusqlite = "0.4"
+lru = "0.12"
+
+# Utilities and Helpers
+uuid = { version = "1.0", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+rand = "0.8.5"
+lazy_static = "1.4"
+parking_lot = "0.12"
+
+# CLI and Terminal
+colored = "2.0"
+clap = { version = "4.4", features = ["derive"] }
+rustyline = "12.0.0"
+term_size = "0.3.2"
+syntect = "5.2.0"
+indicatif = "0.17"
+
+# Web and Browser
+webbrowser = "0.8"
+url = "2.4"
+urlencoding = "2.1"
+
+# Web Scraping and Parsing
+scraper = "0.17"
+html5ever = "0.26"
+agent-twitter-client = "0.1.2"
+fantoccini = "0.21.4"
+
+# Document Processing
+tesseract = "0.15.1"
+pdf-extract = "0.7.0"
+calamine = "0.22.0"
+whatlang = "0.16.0"
+image = "0.24"
+
+# Web API Framework
+axum = { version = "0.7", features = ["json"] }
+tower = { version = "0.4", features = ["limit"] }
+tower-http = { version = "0.5", features = ["cors"] }
+
+# Configuration
+dotenv = "0.15"
+
+[features]
+food = []

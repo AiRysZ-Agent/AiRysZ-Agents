@@ -1,0 +1,12 @@
+{
+    "allergens": [
+        "peanuts",
+        "shellfish",
+        "gluten"
+    ],
+    "safe_temps": {
+        "poultry": 165,
+        "beef": 145,
+        "pork": 145
+    }
+}

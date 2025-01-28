@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html data-theme="light">
+<head>
+    <title>AI Chat Interface</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css" rel="stylesheet" />
+    <style>
+        :root[data-theme="light"] {
+            --bg-color: #f5f7fb;
+            --container-bg: #ffffff;
+            --text-color: #2c3e50;
+            --border-color: #e9ecef;
+            --input-bg: #f8f9fa;
+            --code-bg: #1e1e1e;
+            --primary-color: #007AFF;
+            --hover-color: #0056b3;
+            --shadow-color: rgba(0,0,0,0.1);
+        }
+
+        :root[data-theme="dark"] {
+            --bg-color: #1a1b1e;
+            --container-bg: #2c2e33;
+            --text-color: #e4e5e7;
+            --border-color: #40454e;
+            --input-bg: #3a3d44;
+            --code-bg: #1e1e1e;
+            --primary-color: #5c9eff;
+            --hover-color: #4080ff;
+            --shadow-color: rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background: var(--bg-color);
+            height: 100vh;
+            color: var(--text-color);
+            transition: background-color 0.3s ease;
+        }
+
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--container-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px var(--shadow-color);
+            overflow: hidden;
+            height: 90vh;
+        }
+
+        .header {
+            padding: 16px;
+            background: var(--primary-color);
+            color: white;
+            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .character-select {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: var(--container-bg);
+        }
+
+        .character-select select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            flex-grow: 1;
+            background: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        .clear-history {
+            padding: 8px 16px;
+            background: #ff3b30;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .message-container {
+            height: calc(90vh - 180px);
+            overflow-y: scroll;
+            padding: 20px;
+            padding-bottom: 100px;
+            background: var(--container-bg);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            scroll-behavior: smooth;
+            overflow-anchor: auto;
+        }
+
+        .message {
+            margin: 0;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 85%;
+            position: relative;
+            word-wrap: break-word;
+            line-height: 1.6;
+            font-size: 15px;
+            letter-spacing: normal;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .user-message {
+            background: var(--primary-color);
+            color: white;
+            margin-left: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .ai-message {
+            background: var(--container-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            margin-right: auto;
+            white-space: pre-wrap;
+            position: relative;
+            padding-top: 32px;
+        }
+
+        .character-badge {
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--primary-color);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1;
+        }
+
+        .ai-message p {
+            margin: 0 0 12px 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .ai-message pre {
+            background: #1e1e1e;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+            overflow-x: auto;
+            border: 1px solid #333;
+        }
+
+        .ai-message code {
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #d4d4d4;
+            background: #1e1e1e;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        .token-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            opacity: 0.8;
+        }
+
+        .timestamp {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            opacity: 0.7;
+        }
+
+        .typing-effect {
+            display: inline-block;
+            opacity: 0;
+            animation: typing 0.01s forwards;
+        }
+
+        @keyframes typing {
+            from { opacity: 0; transform: translateY(1px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Code syntax highlighting */
+        .token.comment { color: #6A9955; }
+        .token.string { color: #CE9178; }
+        .token.number { color: #B5CEA8; }
+        .token.keyword { color: #569CD6; }
+        .token.function { color: #DCDCAA; }
+        .token.operator { color: #D4D4D4; }
+        .token.class-name { color: #4EC9B0; }
+        .token.builtin { color: #4EC9B0; }
+
+        .input-container {
+            position: sticky;
+            bottom: 0;
+            background: var(--container-bg);
+            padding: 20px;
+            border-top: 2px solid var(--border-color);
+            display: flex;
+            gap: 12px;
+            box-shadow: 0 -4px 12px var(--shadow-color);
+            z-index: 100;
+        }
+
+        input {
+            flex-grow: 1;
+            padding: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            outline: none;
+            font-size: 15px;
+            transition: all 0.2s;
+            background: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        input:focus {
+            border-color: var(--primary-color);
+            background: var(--container-bg);
+        }
+
+        button {
+            padding: 16px 28px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.2s;
+            min-width: 100px;
+        }
+
+        button:hover {
+            background: var(--hover-color);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px var(--shadow-color);
+        }
+
+        /* Dark mode scrollbar */
+        :root[data-theme="dark"] ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        :root[data-theme="dark"] ::-webkit-scrollbar-track {
+            background: var(--container-bg);
+        }
+
+        :root[data-theme="dark"] ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 5px;
+        }
+
+        :root[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+
+        .message {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .ai-message p {
+            line-height: 1.8;
+        }
+        .ai-message emoji {
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            font-size: 1.1em;
+            vertical-align: -0.1em;
+            display: inline-block;
+            margin: 0 0.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">
+            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path class="sun" d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z"/>
+                    <path class="moon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" style="display: none;"/>
+                </svg>
+            </button>
+            <h2>AI Chat Assistant</h2>
+            <div style="width: 36px;"></div>
+        </div>
+        <div class="character-select">
+            <select id="characterSelect" onchange="changeCharacter()">
+                <option value="simple_assistant">Simple Assistant</option>
+                <option value="coding_ninja">Coding Ninja</option>
+                <option value="masterchef_scientist">Masterchef Scientist</option>
+                <option value="startup_founder">Startup Founder</option>
+                <option value="academic_researcher">Academic Researcher</option>
+                <option value="nova_ai">Nova AI</option>
+            </select>
+            <button class="clear-history" onclick="clearHistory()">Clear History</button>
+        </div>
+        <div id="messageContainer" class="message-container"></div>
+        <div class="input-container">
+            <input type="text" id="messageInput" placeholder="Type your message..." autocomplete="off">
+            <button onclick="sendMessage()" id="sendButton">Send</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-rust.min.js"></script>
+    <script>
+        let currentCharacter = 'simple_assistant';
+        let isProcessing = false;
+
+        // Load chat history from localStorage
+        function loadHistory() {
+            const container = document.getElementById('messageContainer');
+            const history = JSON.parse(localStorage.getItem(`chat_history_${currentCharacter}`) || '[]');
+            container.innerHTML = '';
+            
+            if (history.length === 0) {
+                // Add welcome message if no history
+                const characterName = currentCharacter.split('_')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+                    
+                addMessageWithTypingEffect(
+                    `Hello! I am ${characterName}. How can I assist you?`,
+                    'ai',
+                    null,
+                    new Date().toISOString(),
+                    true
+                );
+            } else {
+                history.forEach(item => {
+                    addMessage(item.content, item.type, item.tokens, item.timestamp, false);
+                });
+            }
+            
+            scrollToBottom();
+        }
+
+        // Save message to history
+        function saveToHistory(message, type, tokens, timestamp) {
+            const history = localStorage.getItem(`chat_history_${currentCharacter}`) || '[]';
+            const messages = JSON.parse(history);
+            messages.push({ content: message, type, tokens, timestamp });
+            localStorage.setItem(`chat_history_${currentCharacter}`, JSON.stringify(messages));
+        }
+
+        // Clear chat history
+        function clearHistory() {
+            if (confirm('Are you sure you want to clear the chat history?')) {
+                localStorage.removeItem(`chat_history_${currentCharacter}`);
+                loadHistory(); // This will add the welcome message
+            }
+        }
+
+        // Change character
+        async function changeCharacter() {
+            const select = document.getElementById('characterSelect');
+            const newCharacter = select.value;
+            
+            try {
+                console.log('Changing character to:', newCharacter);
+                const response = await fetch('http://localhost:9000/character', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ character: newCharacter })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to change character');
+                }
+
+                const data = await response.json();
+                console.log('Server response:', data);
+                
+                // Only update if server change was successful
+                currentCharacter = newCharacter;
+                
+                // Clear message container
+                document.getElementById('messageContainer').innerHTML = '';
+                
+                // Load history for new character
+                loadHistory();
+                
+                // Visual feedback
+                select.style.borderColor = '#0066ff';
+                setTimeout(() => {
+                    select.style.borderColor = '';
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error changing character:', error);
+                // Revert selection
+                select.value = currentCharacter;
+                
+                // Show error message
+                const container = document.getElementById('messageContainer');
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'message ai-message';
+                errorDiv.innerHTML = `<p>Error changing character. Please try again.</p>`;
+                container.appendChild(errorDiv);
+                scrollToBottom();
+            }
+        }
+
+        // Handle emojis with better font support
+        function formatMessage(content) {
+            // Format code blocks first
+            content = content.replace(/```(\w+)?\n([\s\S]*?)```/g, function(match, lang, code) {
+                const language = lang || 'plaintext';
+                const highlighted = Prism.highlight(
+                    code.trim(),
+                    Prism.languages[language] || Prism.languages.plaintext,
+                    language
+                );
+                return `<pre><code class="language-${language}">${highlighted}</code></pre>`;
+            });
+
+            // Format inline code
+            content = content.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+            // Handle emojis with better font support
+            content = content.replace(
+                /([\u{1F300}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F680}-\u{1F6FF}\u{2300}-\u{23FF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{1F170}-\u{1F19A}\u{1F1E6}-\u{1F1FF}\u{1F201}-\u{1F236}\u{1F238}-\u{1F23A}\u{1F250}-\u{1F251}])/gu,
+                '<span style="font-family: \'Segoe UI Emoji\', \'Apple Color Emoji\', \'Noto Color Emoji\', \'Android Emoji\', sans-serif; font-size: 1.2em; vertical-align: -0.1em; display: inline-block; margin: 0 0.05em;">$1</span>'
+            );
+
+            // Split into paragraphs and process each
+            const paragraphs = content.split('\n\n');
+            return paragraphs.map(p => {
+                const trimmed = p.trim();
+                if (!trimmed) return '';
+                return `<p>${trimmed}</p>`;
+            }).filter(Boolean).join('\n');
+        }
+
+        // Improved scrolling for long messages
+        function scrollToBottom(force = false) {
+            const container = document.getElementById('messageContainer');
+            requestAnimationFrame(() => {
+                container.scrollTo({
+                    top: container.scrollHeight,
+                    behavior: 'smooth'
+                });
+            });
+        }
+
+        function formatCharacterName(name) {
+            return name.split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        }
+
+        function addMessage(content, type, tokens, timestamp, save = true) {
+            const container = document.getElementById('messageContainer');
+            const wasAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            
+            if (type === 'ai') {
+                // Add character badge
+                const badge = document.createElement('div');
+                badge.className = 'character-badge';
+                badge.textContent = formatCharacterName(currentCharacter);
+                messageDiv.appendChild(badge);
+                
+                messageDiv.innerHTML += formatMessage(content);
+            } else {
+                messageDiv.textContent = content;
+            }
+
+            if (tokens) {
+                const tokenInfo = document.createElement('div');
+                tokenInfo.className = 'token-info';
+                tokenInfo.textContent = `Tokens: Input: ${tokens.input} | Response: ${tokens.response} | Total: ${tokens.total}`;
+                messageDiv.appendChild(tokenInfo);
+            }
+
+            const timestampDiv = document.createElement('div');
+            timestampDiv.className = 'timestamp';
+            timestampDiv.textContent = new Date(timestamp).toLocaleTimeString();
+            messageDiv.appendChild(timestampDiv);
+
+            container.appendChild(messageDiv);
+            
+            // Only auto-scroll if we were already at the bottom
+            if (wasAtBottom) {
+                scrollToBottom(true);
+            }
+
+            if (save) {
+                saveToHistory(content, type, tokens, timestamp);
+            }
+        }
+
+        function addMessageWithTypingEffect(content, type, tokens, timestamp, save = true) {
+            const container = document.getElementById('messageContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            
+            if (type === 'ai') {
+                const badge = document.createElement('div');
+                badge.className = 'character-badge';
+                badge.textContent = formatCharacterName(currentCharacter);
+                messageDiv.appendChild(badge);
+
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = formatMessage(content);
+                
+                // Process text with faster typing
+                const textNodes = [];
+                const processNode = (node) => {
+                    if (node.nodeType === 3 && node.textContent.trim()) {
+                        textNodes.push(node);
+                    } else if (node.nodeType === 1 && !node.classList?.contains('prism')) {
+                        Array.from(node.childNodes).forEach(processNode);
+                    }
+                };
+                
+                Array.from(tempDiv.childNodes).forEach(processNode);
+                
+                let totalDelay = 0;
+                const CHAR_DELAY = 5;
+                const BATCH_SIZE = 3;
+                
+                textNodes.forEach(textNode => {
+                    const parent = textNode.parentNode;
+                    const text = textNode.textContent;
+                    const fragment = document.createDocumentFragment();
+                    
+                    for (let i = 0; i < text.length; i += BATCH_SIZE) {
+                        const chars = text.slice(i, i + BATCH_SIZE);
+                        const span = document.createElement('span');
+                        span.textContent = chars;
+                        span.className = 'typing-effect';
+                        span.style.animationDelay = `${totalDelay}ms`;
+                        fragment.appendChild(span);
+                        totalDelay += CHAR_DELAY;
+                        
+                        // Scroll more frequently for long messages
+                        if (i % (BATCH_SIZE * 10) === 0) {
+                            setTimeout(() => scrollToBottom(true), totalDelay);
+                        }
+                    }
+                    
+                    if (parent) {
+                        parent.replaceChild(fragment, textNode);
+                    }
+                });
+
+                messageDiv.appendChild(tempDiv);
+            } else {
+                messageDiv.textContent = content;
+            }
+
+            if (tokens) {
+                const tokenInfo = document.createElement('div');
+                tokenInfo.className = 'token-info';
+                tokenInfo.textContent = `Tokens: Input: ${tokens.input} | Response: ${tokens.response} | Total: ${tokens.total}`;
+                messageDiv.appendChild(tokenInfo);
+            }
+
+            const timestampDiv = document.createElement('div');
+            timestampDiv.className = 'timestamp';
+            timestampDiv.textContent = new Date(timestamp).toLocaleTimeString();
+            messageDiv.appendChild(timestampDiv);
+
+            container.appendChild(messageDiv);
+            scrollToBottom(true);
+
+            if (save) {
+                saveToHistory(content, type, tokens, timestamp);
+            }
+        }
+
+        // Update the sendMessage function to use the new animation
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (!message || isProcessing) return;
+
+            isProcessing = true;
+            document.getElementById('sendButton').disabled = true;
+            input.value = '';
+
+            // Add user message immediately
+            addMessage(message, 'user', null, new Date().toISOString(), true);
+
+            const loadingId = showLoading();
+
+            try {
+                const response = await fetch('http://localhost:9000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        character: currentCharacter
+                    })
+                });
+
+                hideLoading(loadingId);
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.status || 'Server error');
+                }
+
+                const data = await response.json();
+                addMessageWithTypingEffect(data.response, 'ai', data.tokens, new Date().toISOString(), true);
+            } catch (error) {
+                console.error('Error sending message:', error);
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    addMessage('Error: Could not connect to the server', 'ai', null, new Date().toISOString(), true);
+                } else {
+                    hideLoading(loadingId);
+                }
+            } finally {
+                isProcessing = false;
+                document.getElementById('sendButton').disabled = false;
+                input.focus();
+            }
+        }
+
+        // Handle Enter key
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Loading indicator functions
+        function showLoading() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading';
+            loadingDiv.innerHTML = `
+                AI is thinking
+                <div class="loading-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            document.getElementById('messageContainer').appendChild(loadingDiv);
+            return loadingDiv;
+        }
+
+        function hideLoading(loadingElement) {
+            if (loadingElement && loadingElement.parentNode) {
+                loadingElement.remove();
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set initial character in select
+            const select = document.getElementById('characterSelect');
+            select.value = currentCharacter;
+            
+            loadHistory();
+            
+            // Add enter key handler
+            document.getElementById('messageInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        });
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            // Update icon
+            const sunPath = document.querySelector('.sun');
+            const moonPath = document.querySelector('.moon');
+            
+            if (newTheme === 'dark') {
+                sunPath.style.display = 'none';
+                moonPath.style.display = 'block';
+            } else {
+                sunPath.style.display = 'block';
+                moonPath.style.display = 'none';
+            }
+        }
+
+        // Initialize theme on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            // Set initial icon
+            const sunPath = document.querySelector('.sun');
+            const moonPath = document.querySelector('.moon');
+            if (savedTheme === 'dark') {
+                sunPath.style.display = 'none';
+                moonPath.style.display = 'block';
+            }
+            
+            loadHistory();
+        });
+
+        // Handle input focus and scroll
+        document.getElementById('messageInput').addEventListener('focus', () => {
+            scrollToBottom(true);
+        });
+
+        // Add scroll to bottom button
+        const scrollButton = document.createElement('button');
+        scrollButton.className = 'scroll-button';
+        scrollButton.innerHTML = '⬇';
+        scrollButton.style.cssText = `
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+            padding: 0;
+            font-size: 20px;
+        `;
+        document.body.appendChild(scrollButton);
+
+        scrollButton.addEventListener('click', () => {
+            scrollToBottom(true);
+        });
+
+        // Show/hide scroll button based on scroll position
+        document.getElementById('messageContainer').addEventListener('scroll', (e) => {
+            const container = e.target;
+            const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+            scrollButton.style.display = isNearBottom ? 'none' : 'flex';
+        });
+    </script>
+</body>
+</html> 
